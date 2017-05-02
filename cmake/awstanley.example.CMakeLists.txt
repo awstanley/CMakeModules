@@ -1,0 +1,143 @@
+# Copyright (c) 2014-2017 A.W. 'swixel' Stanley.
+# All rights reserved.
+# Released under the 3-Clause Licence. (3-CLAUSE-BSD)
+#
+# This is the base of the platform system.
+
+## CMake preconfigruation
+# This is lower than I'd like, but high enough that nothing is missing;
+# typically this should only be increased when needed.
+cmake_minimum_required(VERSION 3.4)
+
+# Active project information.  This is what drives most of the below.
+# The first variable (ACTIVE_PROJECT) does not actually need to be set
+# like this, it just makes me happier.  The latter is used to ensure that
+# if the project is needed it can be checked on by scanning for its binary
+# value being set.  Kind of crazy, but it's a neat enough check.
+set(ACTIVE_PROJECT "AWS_EXAMPLE_PROJECT" CACHE INTERNAL "" FORCE)
+set(${ACTIVE_PROJECT}___BINARY "aws.cmake.example" CACHE INTERNAL "" FORCE)
+
+# Define to break the guard above, using the binary name above.
+# This is used to check if the project is available to other projects.  If it
+# is then the directories (defined by `define` can be used).
+#
+# If this is defined it means the project directory is also globally set.
+set(${ACTIVE_PROJECT} ${${ACTIVE_PROJECT}___BINARY} CACHE INTERNAL "" FORCE)
+
+# Project
+project(${${ACTIVE_PROJECT}___BINARY})
+
+# This is a directory/project related include.  It does mean
+# fairly insane duplication of the modules (unless they are global);
+# at the time of writing CMake 3.4 does not support include_if_exists
+# or similar semantics, so this is the best way.
+set(
+	AWS_CMAKE_DIRECTORY
+	"${PROJECT_SOURCE_DIR}/cmake/awstanley"
+)
+include("${AWS_CMAKE_DIRECTORY}.cmake")
+
+# Version (major, minor, trivial)
+# The rest is automatic.  See `cmake/awstanley/define.cmake`.
+aws_define(0 0 1)
+
+## Options
+# Build the library as static.
+option(
+	${ACTIVE_PROJECT}___BUILD_STATIC
+	"Build ${${ACTIVE_PROJECT}___BINARY} as a shared library"
+	OFF
+)
+
+# Build the library tests (if applicable).
+# - This includes the `deskcheck` style tests I like to have.
+option(
+	${ACTIVE_PROJECT}___BUILD_TESTS
+	"Build ${${ACTIVE_PROJECT}___BINARY} related tests."
+	OFF
+)
+
+# Build the library examples (if applicable).
+option(
+	${ACTIVE_PROJECT}___BUILD_EXAMPLES
+	"Build ${${ACTIVE_PROJECT}___BINARY} related examples."
+	OFF
+)
+
+## Define empty lists (as required for inclusion in unwind)
+# Sources
+set(${ACTIVE_PROJECT}___SOURCES "")
+
+# Include subcomponent(s)
+# This file adds files or does whatever it needs;
+# see the `unwind.example` for an example of this.
+aws_component("unwind.example")
+
+# I use this to force all of my own projects to
+# go static.
+if(DEFINED AWS_PROJECT_BUILD_STATIC)
+	set(${ACTIVE_PROJECT}___BUILD_STATIC ON)
+endif()
+
+# Determine build
+if(${ACTIVE_PROJECT}___BUILD_STATIC)
+	set(PROJECT_LINKAGE STATIC)
+else()
+	set(PROJECT_LINKAGE SHARED)
+endif()
+
+add_library(
+	${${ACTIVE_PROJECT}___BINARY}
+	${PROJECT_LINKAGE}
+	${${ACTIVE_PROJECT}___SOURCES}
+)
+
+# Inform the project it's building.
+target_compile_definitions(
+	${${ACTIVE_PROJECT}___BINARY}
+	PUBLIC
+	"BUILDING_${ACTIVE_PROJECT}=1"
+)
+
+# Push information
+if(${ACTIVE_PROJECT}___BUILD_STATIC)
+	target_compile_definitions(
+		${${ACTIVE_PROJECT}___BINARY}
+		PUBLIC
+		"BUILDING_${ACTIVE_PROJECT}___STATIC=1"
+	)
+else()
+	target_compile_definitions(
+		${${ACTIVE_PROJECT}___BINARY}
+		PUBLIC
+		"BUILDING_${ACTIVE_PROJECT}___STATIC=0"
+	)
+endif()
+
+# Make sure all of the possible include paths are included for this
+# project.
+target_include_directories(
+	${${ACTIVE_PROJECT}___BINARY}
+	PUBLIC
+	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES}
+	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES_BINARY}
+	${${ACTIVE_PROJECT}___DIRECTORY_SOURCES}
+	${${ACTIVE_PROJECT}___DIRECTORY_SOURCES_BINARY}
+)
+
+# Any post-includes should go here too, be it via include or whatever;
+# I actually have another script for this but it's not yet ready for
+# public consumption (as it's a little hardcoded to my needs).
+
+# This can be modified, as it isn't really important.  It's just
+# an example.  Examples would be the same, if they were needed.
+if(${ACTIVE_PROJECT}___BUILD_TESTS)
+	message("Building tests for ${${ACTIVE_PROJECT}___BINARY}")
+	include("${PROJECT_SOURCE_DIR}/tests/tests.cmake")
+endif()
+
+# We clean this up as we don't actually want it globally floating
+# around.  We only pushed the global to make sure that if we really need
+# to make certain inclusions (that have scope issues) that they could access
+# anything in the macro.
+unset(ACTIVE_PROJECT)

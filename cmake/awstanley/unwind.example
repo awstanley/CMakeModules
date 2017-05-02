@@ -1,0 +1,22 @@
+# This assumes `define.cmake` and `unwind.cmake` are installed/used.
+
+# Declare lists.
+set(component_includes "${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES}/myHeader.hpp")
+set(component_sources "${${ACTIVE_PROJECT}___DIRECTORY_SOURCES}/mySource.cpp")
+
+# This is where the magic happens.
+set(component_source_groups
+    "Header Files\\\\ComponentGroup" component_includes
+    "Source Files\\\\ComponentGroup" component_sources
+)
+
+# This injects it into the sources
+aws_unwind(
+    component_source_groups
+    ${ACTIVE_PROJECT}___SOURCES
+)
+
+# This can all be unset now.
+unset(component_source_groups)
+unset(component_sources)
+unset(component_includes)
