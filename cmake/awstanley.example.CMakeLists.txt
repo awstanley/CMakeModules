@@ -136,6 +136,36 @@ if(${ACTIVE_PROJECT}___BUILD_TESTS)
 	include("${PROJECT_SOURCE_DIR}/tests/tests.cmake")
 endif()
 
+# Install the h files from the source includes.
+# This may need to be `*.h*` for certain parties.
+install(
+	DIRECTORY
+	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES}
+	DESTINATION "include"
+	FILES_MATCHING PATTERN "*.hpp"
+)
+
+# Install the h files from the CMake configured includes.
+# This may need to be `*.h*` for certain parties.
+install(
+	DIRECTORY
+	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES_BINARY}
+	DESTINATION "include"
+	FILES_MATCHING PATTERN "*.hpp"
+)
+
+# Install the binary.  This may vary based on build style;
+# typically when I build my static and non-static builds are
+# used within a project's scope, so I do not differentiate my
+# lib and archive directories.  You may wish to use lib/static
+# or merely `static` for you own projects.
+install(
+	TARGETS ${${ACTIVE_PROJECT}___BINARY}
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
+
 # We clean this up as we don't actually want it globally floating
 # around.  We only pushed the global to make sure that if we really need
 # to make certain inclusions (that have scope issues) that they could access
