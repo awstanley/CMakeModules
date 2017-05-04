@@ -4,7 +4,7 @@
 #
 # This is the base of the platform system.
 
-## CMake preconfigruation
+## CMake pre-configuration
 # This is lower than I'd like, but high enough that nothing is missing;
 # typically this should only be increased when needed.
 cmake_minimum_required(VERSION 3.4)
@@ -106,12 +106,36 @@ if(${ACTIVE_PROJECT}___BUILD_STATIC)
 		PUBLIC
 		"BUILDING_${ACTIVE_PROJECT}___STATIC=1"
 	)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY} PROPERTIES
+		DEBUG_POSTFIX -static-debug)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY} PROPERTIES
+		RELEASE_POSTFIX -static)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY} PROPERTIES
+		MINSIZEREL_POSTFIX -static)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY} PROPERTIES
+		RELWITHDEBINFO_POSTFIX -static)
 else()
 	target_compile_definitions(
 		${${ACTIVE_PROJECT}___BINARY}
 		PUBLIC
 		"BUILDING_${ACTIVE_PROJECT}___STATIC=0"
 	)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY}
+		PROPERTIES DEBUG_POSTFIX -debug)
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY}
+		PROPERTIES MINSIZEREL_POSTFIX "")
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY}
+		PROPERTIES RELWITHDEBINFO_POSTFIX "")
+	set_target_properties(${${ACTIVE_PROJECT}___BINARY}
+		PROPERTIES RELEASE_POSTFIX "")
+endif()
+
+# While Android isn't currently it's important to ensure when I later
+# copy and paste this that this is in place.  Android strips the versions,
+# so this would cause problems if left on.
+if(NOT ANDROID)
+	set_target_properties(${target} PROPERTIES SOVERSION ${${ACTIVE_PROJECT}___VERSION_MAJOR}.${${ACTIVE_PROJECT}___VERSION_MINOR})
+	set_target_properties(${target} PROPERTIES VERSION ${${ACTIVE_PROJECT}___VERSION_MAJOR}.${${ACTIVE_PROJECT}___VERSION_MINOR})
 endif()
 
 # Make sure all of the possible include paths are included for this
@@ -137,21 +161,21 @@ if(${ACTIVE_PROJECT}___BUILD_TESTS)
 endif()
 
 # Install the h files from the source includes.
-# This may need to be `*.h*` for certain parties.
+# This may need to be `*.h*` or `*.hpp`.
 install(
 	DIRECTORY
 	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES}
 	DESTINATION "include"
-	FILES_MATCHING PATTERN "*.hpp"
+	FILES_MATCHING PATTERN "*.h*"
 )
 
 # Install the h files from the CMake configured includes.
-# This may need to be `*.h*` for certain parties.
+# This may need to be `*.h*` or `*.hpp`.
 install(
 	DIRECTORY
 	${${ACTIVE_PROJECT}___DIRECTORY_INCLUDES_BINARY}
 	DESTINATION "include"
-	FILES_MATCHING PATTERN "*.hpp"
+	FILES_MATCHING PATTERN "*.h*"
 )
 
 # Install the binary.  This may vary based on build style;
